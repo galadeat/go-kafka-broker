@@ -3,8 +3,8 @@ package server
 import (
 	"fmt"
 
-	"github.com/codecrafters-io/kafka-starter-go/app/handlers"
-	"github.com/codecrafters-io/kafka-starter-go/app/protocol"
+	"github.com/galadeat/go-kafka-broker/handlers"
+	"github.com/galadeat/go-kafka-broker/protocol"
 )
 
 // API handler signature

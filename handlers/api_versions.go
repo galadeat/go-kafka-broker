@@ -1,6 +1,6 @@
 package handlers
 
-import "github.com/codecrafters-io/kafka-starter-go/app/protocol"
+import "github.com/galadeat/go-kafka-broker/protocol"
 
 // Api VersionsHandler формирует ответ на ApiVersions запрос
 func ApiVersionsHandler(correlationID int32, version int16) ([]byte, error) {

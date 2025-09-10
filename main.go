@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/codecrafters-io/kafka-starter-go/app/server"
+	"github.com/galadeat/go-kafka-broker/server"
 )
 
 func main() {
