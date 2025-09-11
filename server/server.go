@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"time"
 )
 
 func ListenandServe(addr string) error {
@@ -30,10 +31,11 @@ func ListenandServe(addr string) error {
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
+	conn.SetDeadline(time.Now().Add(10 * time.Second))
 	for {
 		buf, err := createBuffer(conn)
 		if err != nil {
-			fmt.Println("Incorrect request")
+			fmt.Println(" incorrect request")
 			return
 		}
 
