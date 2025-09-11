@@ -3,10 +3,12 @@ package server
 import (
 	"encoding/binary"
 	"fmt"
+	"io"
 	"net"
+	"time"
 )
 
-func Listen(addr string) error {
+func ListenandServe(addr string) error {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("failed to bind to %s: %w", addr, err)
@@ -22,33 +24,59 @@ func Listen(addr string) error {
 			continue
 		}
 
-		handleConnection(conn)
+		go handleConnection(conn)
 	}
 }
 
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
-	buf := make([]byte, 2048)
-	if _, err := conn.Read(buf); err != nil {
-		fmt.Println("read error: ", err)
-		return
+	conn.SetDeadline(time.Now().Add(10 * time.Second))
+	for {
+		buf, err := createBuffer(conn)
+		if err != nil {
+			fmt.Println(" incorrect request")
+			return
+		}
+
+		//Proceeding Kafka request
+		if len(buf) < 12 {
+			return
+		}
+		apiKey := int16(binary.BigEndian.Uint16(buf[:2]))
+		version := int16(binary.BigEndian.Uint16(buf[2:4]))
+		corrId := int32(binary.BigEndian.Uint32(buf[4:8]))
+
+		// Calling api key handler
+		resp, err := HandleRequest(apiKey, corrId, version)
+		if err != nil {
+			fmt.Println("handler error: ", err)
+			return
+		}
+
+		if _, err := conn.Write(resp); err != nil {
+			fmt.Println("write error: ", err)
+		}
+
 	}
 
-	//Proceeding Kafka request
-	apiKey := int16(binary.BigEndian.Uint16(buf[4:6]))
-	version := int16(binary.BigEndian.Uint16(buf[6:8]))
-	corrId := int32(binary.BigEndian.Uint32(buf[8:12]))
+}
 
-	// Calling api key handler
-	resp, err := HandleRequest(apiKey, corrId, version)
-	if err != nil {
-		fmt.Println("handler error: ", err)
-		return
+func createBuffer(conn net.Conn) ([]byte, error) {
+	msgLength := make([]byte, 4)
+	if _, err := io.ReadFull(conn, msgLength); err != nil {
+		fmt.Printf("error: can't read message size %s", err)
+		return nil, err
+	}
+	msgLen := binary.BigEndian.Uint32(msgLength)
+	if msgLen > MaxLenRequest {
+		return nil, fmt.Errorf("request is too long")
 	}
 
-	if _, err := conn.Write(resp); err != nil {
-		fmt.Println("write error: ", err)
+	buffLength := make([]byte, msgLen)
+	if _, err := io.ReadFull(conn, buffLength); err != nil {
+		fmt.Printf("error: can't read message size %s", err)
+		return nil, err
 	}
-
+	return buffLength, nil
 }

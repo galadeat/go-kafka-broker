@@ -14,7 +14,7 @@ func main() {
 	// address
 	addr := "0.0.0.0:9092"
 
-	if err := server.Listen(addr); err != nil {
+	if err := server.ListenandServe(addr); err != nil {
 		log.Fatalf("Server stopped with error: %v", err)
 	}
 }
